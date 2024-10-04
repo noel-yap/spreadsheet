@@ -3,13 +3,7 @@ import unittest
 import parser
 import spreadsheet
 
-
-# Example usage
-# expression = "3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3"
-# tokens = tokenize(expression)
-# parser = Parser(tokens)
-# result = parser.parse()
-# print(f"Result: {result}")
+from unittest.mock import Mock
 
 class TestTokenize(unittest.TestCase):
     def test_int(self):
@@ -101,7 +95,7 @@ class TestParserParseInt(unittest.TestCase):
 
         actual = p.parse_int()
 
-        self.assertEqual(expected, actual(spreadsheet.Sheet([])))
+        self.assertEqual(expected, actual(spreadsheet.Sheet()))
 
 
 class TestParserParseAddr(unittest.TestCase):
@@ -109,11 +103,8 @@ class TestParserParseAddr(unittest.TestCase):
         expected_output = 1234
         expected_dependencies = {"A1"}
 
-        cell = spreadsheet.Cell()
-        cell.set_expr(lambda _: 1234)
-
-        sheet = spreadsheet.Sheet([[cell]])
-        cell.update_val(sheet)
+        sheet = spreadsheet.Sheet()
+        sheet.get_val = Mock(return_value=1234)
 
         p = parser.Parser([(parser.Token("ADDR", "A1"))])
 
@@ -121,6 +112,8 @@ class TestParserParseAddr(unittest.TestCase):
 
         self.assertEqual(expected_output, actual(sheet))
         self.assertEqual(expected_dependencies, p.addr_references)
+        sheet.get_val.assert_called_with("A1")
+        sheet.get_val.assert_called_once()
 
 
 class TestParserParseFactor(unittest.TestCase):
@@ -131,22 +124,21 @@ class TestParserParseFactor(unittest.TestCase):
 
         actual = p.parse_factor()
 
-        self.assertEqual(expected, actual(spreadsheet.Sheet([])))
+        self.assertEqual(expected, actual(spreadsheet.Sheet()))
 
     def test_addr(self):
         expected = 1234
 
-        cell = spreadsheet.Cell()
-        cell.set_expr(lambda _: 1234)
-
-        sheet = spreadsheet.Sheet([[cell]])
-        cell.update_val(sheet)
+        sheet = spreadsheet.Sheet()
+        sheet.get_val = Mock(return_value=1234)
 
         p = parser.Parser([(parser.Token("ADDR", "A1"))])
 
         actual = p.parse_factor()
 
         self.assertEqual(expected, actual(sheet))
+        sheet.get_val.assert_called_with("A1")
+        sheet.get_val.assert_called_once()
 
     def test_negative_factor(self):
         expected = -1234
@@ -156,7 +148,7 @@ class TestParserParseFactor(unittest.TestCase):
             (parser.Token("INT", "1234"))
         ])
 
-        actual = p.parse_factor()(spreadsheet.Sheet([]))
+        actual = p.parse_factor()(spreadsheet.Sheet())
 
         self.assertEqual(expected, actual)
 
@@ -169,7 +161,7 @@ class TestParserParseFactor(unittest.TestCase):
             (parser.Token(")", ")"))
         ])
 
-        actual = p.parse_factor()(spreadsheet.Sheet([]))
+        actual = p.parse_factor()(spreadsheet.Sheet())
 
         self.assertEqual(expected, actual)
 
@@ -180,7 +172,7 @@ class TestParserParseFactor(unittest.TestCase):
                 (parser.Token("INT", "2"))
             ])
 
-            _ = p.parse_factor()(spreadsheet.Sheet([]))
+            _ = p.parse_factor()(spreadsheet.Sheet())
 
         self.assertEqual(str(ctx.exception), "Mismatched parentheses")
 
@@ -190,7 +182,7 @@ class TestParserParseFactor(unittest.TestCase):
                 (parser.Token("…", "…"))
             ])
 
-            _ = p.parse_factor()(spreadsheet.Sheet([]))
+            _ = p.parse_factor()(spreadsheet.Sheet())
 
         self.assertEqual(str(ctx.exception), "Invalid syntax")
 
@@ -203,7 +195,7 @@ class TestParserParseTerm(unittest.TestCase):
             (parser.Token("INT", "1234"))
         ])
 
-        actual = p.parse_term()(spreadsheet.Sheet([]))
+        actual = p.parse_term()(spreadsheet.Sheet())
 
         self.assertEqual(expected, actual)
 
@@ -218,7 +210,7 @@ class TestParserParseTerm(unittest.TestCase):
             (parser.Token("INT", "2"))
         ])
 
-        actual = p.parse_term()(spreadsheet.Sheet([]))
+        actual = p.parse_term()(spreadsheet.Sheet())
 
         self.assertEqual(expected, actual)
 
@@ -229,7 +221,7 @@ class TestParserParseTerm(unittest.TestCase):
                 (parser.Token("*", "*"))
             ])
 
-            _ = p.parse_term()(spreadsheet.Sheet([]))
+            _ = p.parse_term()(spreadsheet.Sheet())
 
         self.assertEqual(str(ctx.exception), "Invalid syntax")
 
@@ -242,7 +234,7 @@ class TestParserParseExpr(unittest.TestCase):
             (parser.Token("INT", "1234"))
         ])
 
-        actual = p.parse_expr()(spreadsheet.Sheet([]))
+        actual = p.parse_expr()(spreadsheet.Sheet())
 
         self.assertEqual(expected, actual)
 
@@ -257,7 +249,7 @@ class TestParserParseExpr(unittest.TestCase):
             (parser.Token("INT", "2"))
         ])
 
-        actual = p.parse_expr()(spreadsheet.Sheet([]))
+        actual = p.parse_expr()(spreadsheet.Sheet())
 
         self.assertEqual(expected, actual)
 
@@ -268,7 +260,7 @@ class TestParserParseExpr(unittest.TestCase):
                 (parser.Token("+", "+"))
             ])
 
-            _ = p.parse_expr()(spreadsheet.Sheet([]))
+            _ = p.parse_expr()(spreadsheet.Sheet())
 
         self.assertEqual(str(ctx.exception), "Invalid syntax")
 
@@ -278,7 +270,7 @@ class TestParserParseExpr(unittest.TestCase):
                 (parser.Token(")", ")"))
             ])
 
-            _ = p.parse_expr()(spreadsheet.Sheet([]))
+            _ = p.parse_expr()(spreadsheet.Sheet())
 
         self.assertEqual(str(ctx.exception), "Invalid syntax")
 
@@ -295,7 +287,7 @@ class TestParserParseExpr(unittest.TestCase):
             (parser.Token(")", ")"))
         ])
 
-        actual = p.parse_expr()(spreadsheet.Sheet([]))
+        actual = p.parse_expr()(spreadsheet.Sheet())
 
         self.assertEqual(expected, actual)
 

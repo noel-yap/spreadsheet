@@ -1,6 +1,5 @@
 from typing import List, Set, Tuple
 
-from addr import Addr
 from expr import Expr
 
 
@@ -30,14 +29,14 @@ class Parser:
 
     tokens: List[Token]
     current: int
-    addr_references: Set[Addr]  # set of addresses the formula references
+    addr_references: Set[str]  # set of addresses the formula references
 
     def __init__(self, tokens: List[Token]):
         self.tokens = tokens
         self.current = 0
         self.addr_references = set()
 
-    def parse(self) -> Tuple[Expr, Set[Addr]]:
+    def parse(self) -> Tuple[Expr, Set[str]]:
         return self.parse_expr(), self.addr_references
 
     # «EXPR» ≔ «TERM» { "+" «TERM» | "-" «TERM» }
@@ -119,6 +118,7 @@ def tokenize(expression: str) -> List[Token]:
             start = current
             while current < len(expression) and expression[current].isdigit():
                 current += 1
+
             tokens.append(Token('INT', expression[start:current]))
         elif char.isupper():
             start = current
@@ -130,6 +130,7 @@ def tokenize(expression: str) -> List[Token]:
 
             while current < len(expression) and expression[current].isdigit():
                 current += 1
+
             tokens.append(Token('ADDR', expression[start:current]))
         elif char in '+-*/()':
             tokens.append(Token(char, char))

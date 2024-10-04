@@ -76,26 +76,24 @@ class Cell:
 
 
 class Sheet:
-    cells: List[List[Cell]]
+    cells: defaultdict[str, defaultdict[int, Cell]]
 
-    def __init__(self, cells: List[List[Cell]]):
-        self.cells = cells
+    def __init__(self):
+        self.cells = defaultdict(lambda: defaultdict(Cell))
 
     def set_contents(self, addr: str, contents: str):
         expr, addr_refs = self.convert_contents_to_callable(contents)
 
-        cell = self.get_cell(addr)
+        cell = self.get_cell(Addr(addr))
         cell.set_expr(expr)
         cell.set_dependencies(set(self.get_cell(addr) for addr in addr_refs))
         cell.update_val(self)
 
-    def get_cell(self, addr: Addr):
-        col, row = Sheet.convert_addr_to_col_row(addr)
-
-        return self.cells[col][row]
+    def get_cell(self, addr: Addr) -> Cell:
+        return self.cells[addr.col][addr.row]
 
     def get_val(self, addr: str) -> int:
-        return self.get_cell(addr).get_val()
+        return self.get_cell(Addr(addr)).get_val()
 
     @staticmethod
     def convert_contents_to_callable(expr: str) -> Tuple[Expr, Set[Addr]]:
@@ -105,28 +103,6 @@ class Sheet:
             tokens = parser.tokenize(expr)
 
         p = parser.Parser(tokens)
+        expr, addr_refs = p.parse()
 
-        return p.parse()
-
-    @staticmethod
-    def convert_addr_to_col_row(addr: str) -> Tuple[int, int]:
-        i = 0
-        while not addr[i].isdigit():
-            i += 1
-        col = Sheet.convert_addr_col_to_col(addr[:i])
-        row = Sheet.convert_addr_row_to_row(addr[i:])
-
-        return col, row
-
-    @staticmethod
-    def convert_addr_col_to_col(addr_col: str) -> int:
-        result = 0
-        for c in addr_col:
-            result *= 26
-            result += ord(c) - ord('A') + 1
-
-        return result - 1
-
-    @staticmethod
-    def convert_addr_row_to_row(addr_row: str):
-        return int(addr_row) - 1
+        return expr, {Addr(a) for a in addr_refs}
